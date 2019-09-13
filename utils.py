@@ -30,7 +30,7 @@ def run_command(cmd):
         line = p.stdout.readline()
         stdout.append(line)
         print(line.decode("utf-8"))
-        if line == '' and p.poll() != None:
+        if line == '' and p.poll() is not None:
             break
     return ''.join(stdout)
 
@@ -39,7 +39,7 @@ def run_shell_display(cmd):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     while True:
         out = p.stdout.read(1).decode('utf-8')
-        if out == '' and p.poll() != None:
+        if out == '' and p.poll() is not None:
             break
         if out != '':
             sys.stdout.write(out)
@@ -75,7 +75,7 @@ def read_args_command_line(args, config):
         if r2.match(args[i]) is None and r4.match(args[i]) is None:
             sys.stderr.write(
                 'ERROR: option \"%s\" from command line is not valid! (the format must be \"--section,field=value\")\n' % (
-                args[i]))
+                    args[i]))
             sys.exit(0)
 
         sections.append(re.search('--(.*),', args[i]).group(1))
@@ -109,7 +109,7 @@ def read_args_command_line(args, config):
                     if number >= len(matching):
                         sys.stderr.write(
                             'ERROR: the field number \"%s\" provided from command line is not valid, we found \"%s\" \"%s\" field(s) in section \"%s\"!\n' % (
-                            number, len(matching), f_name, field))
+                                number, len(matching), f_name, field))
                         sys.exit(0)
                     else:
 
@@ -121,14 +121,14 @@ def read_args_command_line(args, config):
 
                 else:
                     sys.stderr.write('ERROR: field \"%s\" of section \"%s\" from command line is not valid!")\n' % (
-                    field, sections[i]))
+                        field, sections[i]))
                     sys.exit(0)
             else:
                 if fields[i] in list(config[sections[i]]):
                     config[sections[i]][fields[i]] = values[i]
                 else:
                     sys.stderr.write('ERROR: field \"%s\" of section \"%s\" from command line is not valid!")\n' % (
-                    fields[i], sections[i]))
+                        fields[i], sections[i]))
                     sys.exit(0)
         else:
             sys.stderr.write('ERROR: section \"%s\" from command line is not valid!")\n' % (sections[i]))
@@ -168,7 +168,7 @@ def check_field(inp, type_inp, field):
         if not (os.path.isfile(inp)) and not (os.path.isdir(inp)) and inp != 'none':
             sys.stderr.write(
                 "ERROR: The path \"%s\" specified in the field  \"%s\" of the config file does not exists! \n" % (
-                inp, field))
+                    inp, field))
             valid_field = False
             sys.exit(0)
 
@@ -195,7 +195,7 @@ def check_field(inp, type_inp, field):
             if int(inp) < int(lower_bound):
                 sys.stderr.write(
                     "ERROR: The field \"%s\" can only contain an integer greater than %s (got \"%s\") \n" % (
-                    field, lower_bound, inp))
+                        field, lower_bound, inp))
                 valid_field = False
                 sys.exit(0)
 
@@ -203,7 +203,7 @@ def check_field(inp, type_inp, field):
             if int(inp) > int(upper_bound):
                 sys.stderr.write(
                     "ERROR: The field \"%s\" can only contain an integer smaller than %s (got \"%s\") \n" % (
-                    field, upper_bound, inp))
+                        field, upper_bound, inp))
                 valid_field = False
                 sys.exit(0)
 
@@ -222,14 +222,14 @@ def check_field(inp, type_inp, field):
         if lower_bound != "-inf":
             if float(inp) < float(lower_bound):
                 sys.stderr.write("ERROR: The field \"%s\" can only contain a float greater than %s (got \"%s\") \n" % (
-                field, lower_bound, inp))
+                    field, lower_bound, inp))
                 valid_field = False
                 sys.exit(0)
 
         if upper_bound != "inf":
             if float(inp) > float(upper_bound):
                 sys.stderr.write("ERROR: The field \"%s\" can only contain a float smaller than %s (got \"%s\") \n" % (
-                field, upper_bound, inp))
+                    field, upper_bound, inp))
                 valid_field = False
                 sys.exit(0)
 
@@ -247,7 +247,7 @@ def check_field(inp, type_inp, field):
         except ValueError:
             sys.stderr.write(
                 "ERROR: The field \"%s\" can only contain a list of integer (got \"%s\").  Make also sure there aren't white spaces between commas.\n" % (
-                field, inp))
+                    field, inp))
             valid_field = False
             sys.exit(0)
 
@@ -261,14 +261,14 @@ def check_field(inp, type_inp, field):
                 if int(elem) < int(lower_bound):
                     sys.stderr.write(
                         "ERROR: The field \"%s\" can only contain an integer greater than %s (got \"%s\") \n" % (
-                        field, lower_bound, elem))
+                            field, lower_bound, elem))
                     valid_field = False
                     sys.exit(0)
             if upper_bound != "inf":
                 if int(elem) > int(upper_bound):
                     sys.stderr.write(
                         "ERROR: The field \"%s\" can only contain an integer smaller than %s (got \"%s\") \n" % (
-                        field, upper_bound, elem))
+                            field, upper_bound, elem))
                     valid_field = False
                     sys.exit(0)
 
@@ -279,7 +279,7 @@ def check_field(inp, type_inp, field):
         except ValueError:
             sys.stderr.write(
                 "ERROR: The field \"%s\" can only contain a list of floats (got \"%s\"). Make also sure there aren't white spaces between commas. \n" % (
-                field, inp))
+                    field, inp))
             valid_field = False
             sys.exit(0)
         # Check if the value if within the expected range
@@ -292,7 +292,7 @@ def check_field(inp, type_inp, field):
                 if float(elem) < float(lower_bound):
                     sys.stderr.write(
                         "ERROR: The field \"%s\" can only contain a float greater than %s (got \"%s\") \n" % (
-                        field, lower_bound, elem))
+                            field, lower_bound, elem))
                     valid_field = False
                     sys.exit(0)
 
@@ -300,7 +300,7 @@ def check_field(inp, type_inp, field):
                 if float(elem) > float(upper_bound):
                     sys.stderr.write(
                         "ERROR: The field \"%s\" can only contain a float smaller than %s (got \"%s\") \n" % (
-                        field, upper_bound, elem))
+                            field, upper_bound, elem))
                     valid_field = False
                     sys.exit(0)
 
@@ -311,7 +311,7 @@ def check_field(inp, type_inp, field):
             if not (elem in lst):
                 sys.stderr.write(
                     "ERROR: The field \"%s\" can only contain a list of boolean (got \"%s\"). Make also sure there aren't white spaces between commas.\n" % (
-                    field, inp))
+                        field, inp))
                 valid_field = False
                 sys.exit(0)
 
@@ -404,14 +404,12 @@ def check_cfg_fields(config_proto, config, cfg_file):
                 if not (field in config[sec]):
                     sys.stderr.write(
                         "ERROR: The confg file %s does not contain the field \"%s=\" in section  \"[%s]\" (mandatory)!\n" % (
-                        cfg_file, field, sec))
+                            cfg_file, field, sec))
                     sec_parse = False
                 else:
                     field_type = config_proto[sec][field]
                     if not (check_field(config[sec][field], field_type, field)):
                         sec_parse = False
-
-
 
         # If a mandatory section doesn't exist...
         else:
@@ -419,7 +417,7 @@ def check_cfg_fields(config_proto, config, cfg_file):
                 "ERROR: The confg file %s does not contain \"[%s]\" section (mandatory)!\n" % (cfg_file, sec))
             sec_parse = False
 
-    if sec_parse == False:
+    if not sec_parse:
         sys.stderr.write("ERROR: Revise the confg file %s \n" % (cfg_file))
         sys.exit(0)
     return sec_parse
@@ -458,7 +456,7 @@ def check_consistency_with_proto(cfg_file, cfg_file_proto):
     # Check mandatory sections and fields
     sec_parse = check_cfg_fields(config_proto, config, cfg_file)
 
-    if sec_parse == False:
+    if not sec_parse:
         sys.exit(0)
 
     return [config_proto, name_data, name_arch]
@@ -544,7 +542,9 @@ def check_cfg(cfg_file, config, cfg_file_proto):
         # Check that fea_name doesn't contain special characters
         for name_features in fea_names_lst[cnt]:
             if not (re.match("^[a-zA-Z0-9]*$", name_features)):
-                sys.stderr.write("ERROR: features names (fea_name=) must contain only letters or numbers (no special characters as \"_,$,..\") \n")
+                sys.stderr.write(
+                    "ERROR: features names (fea_name=) must contain only letters or numbers (no special characters as "
+                    "\"_,$,..\") \n")
                 sec_parse = False
                 sys.exit(0)
 
@@ -600,7 +600,7 @@ def check_cfg(cfg_file, config, cfg_file_proto):
             if forward_out_lst[i] not in possible_outs:
                 sys.stderr.write(
                     'ERROR: the output \"%s\" in the section \"forward_out\" is not defined in section model)\n' % (
-                    forward_out_lst[i]))
+                        forward_out_lst[i]))
                 sys.exit(0)
 
             if strtobool(forward_norm_bool_lst[i]):
@@ -609,7 +609,7 @@ def check_cfg(cfg_file, config, cfg_file_proto):
                     if not os.path.exists(forward_norm_lst[i]):
                         sys.stderr.write(
                             'ERROR: the count_file \"%s\" in the section \"forward_out\" does not exist)\n' % (
-                            forward_norm_lst[i]))
+                                forward_norm_lst[i]))
                         sys.exit(0)
                     else:
                         # Check if the specified file is in the right format
@@ -618,7 +618,7 @@ def check_cfg(cfg_file, config, cfg_file_proto):
                         if not (bool(re.match("(.*)\[(.*)\]", cnts))):
                             sys.stderr.write(
                                 'ERROR: the count_file \"%s\" in the section \"forward_out\" not in the right format)\n' % (
-                                forward_norm_lst[i]))
+                                    forward_norm_lst[i]))
                 else:
                     # Try to automatically retrieve the count file from the config file
                     # Compute the number of context-dependent phone states
@@ -628,7 +628,8 @@ def check_cfg(cfg_file, config, cfg_file_proto):
                         cmd = "hmm-info " + folder_lab_count + "/final.mdl | awk '/pdfs/{print $4}'"
                         output = run_shell(cmd, log_file)
                         if output.decode().rstrip() == '':
-                            sys.stderr.write("ERROR: hmm-info command doesn't exist. Make sure your .bashrc contains the Kaldi paths and correctly exports it.\n")
+                            sys.stderr.write(
+                                "ERROR: hmm-info command doesn't exist. Make sure your .bashrc contains the Kaldi paths and correctly exports it.\n")
                             sys.exit(0)
                         N_out = int(output.decode().rstrip())
                         N_out_lab[lab_lst.index(forward_norm_lst[i])] = N_out
@@ -642,7 +643,7 @@ def check_cfg(cfg_file, config, cfg_file_proto):
                     else:
                         sys.stderr.write(
                             'ERROR: Not able to automatically retrieve count file for the label \"%s\". Please add a valid count file path in \"normalize_with_counts_from\" or set normalize_posteriors=False \n' % (
-                            forward_norm_lst[i]))
+                                forward_norm_lst[i]))
                         sys.exit(0)
 
     # Update the config file with the count_file paths
@@ -670,7 +671,7 @@ def check_cfg(cfg_file, config, cfg_file_proto):
     # Create block diagram picture of the model
     create_block_diagram(cfg_file)
 
-    if sec_parse == False:
+    if not sec_parse:
         sys.exit(0)
 
     return [config, name_data, name_arch]
@@ -684,7 +685,7 @@ def cfg_item2sec(config, field, value):
 
     sys.stderr.write("ERROR: %s=%s not found in config file \n" % (field, value))
     sys.exit(0)
-    return -1
+    # return -1
 
 
 def split_chunks(seq, size):
@@ -801,7 +802,7 @@ def create_configs(config):
                     ck, N_ck_str_format) + '.cfg'
                 lst_chunk_file.write(config_chunk_file + '\n')
 
-                if strtobool(config['batches']['increase_seq_length_train']) == False:
+                if not strtobool(config['batches']['increase_seq_length_train']):
                     max_seq_length_train_curr = int(max_seq_length_tr_arr[ep])
 
                 # Write chunk-specific cfg file
@@ -918,7 +919,7 @@ def create_lists(config):
             for ck in range(N_chunks):
                 for i in range(len(fea_names)):
 
-                    tr_chunks_fea_split = [];
+                    tr_chunks_fea_split = []
                     for snt in tr_chunks_fea[ck]:
                         # print(snt.split(',')[i])
                         tr_chunks_fea_split.append(snt.split(',')[i])
@@ -962,7 +963,7 @@ def create_lists(config):
             for ck in range(N_chunks):
                 for i in range(len(fea_names)):
 
-                    valid_chunks_fea_split = [];
+                    valid_chunks_fea_split = []
                     for snt in valid_chunks_fea[ck]:
                         # print(snt.split(',')[i])
                         valid_chunks_fea_split.append(snt.split(',')[i])
@@ -1005,7 +1006,7 @@ def create_lists(config):
         for ck in range(N_chunks):
             for i in range(len(fea_names)):
 
-                forward_chunks_fea_split = [];
+                forward_chunks_fea_split = []
                 for snt in forward_chunks_fea[ck]:
                     # print(snt.split(',')[i])
                     forward_chunks_fea_split.append(snt.split(',')[i])
@@ -1133,7 +1134,7 @@ def parse_fea_field(fea):
 
                 # Check features names
     if not (sorted(fea_names) == sorted(list(set(fea_names)))):
-        sys.stderr.write('ERROR fea_names must be different! (got %s)' % (fea_names))
+        sys.stderr.write('ERROR fea_names must be different! (got %s)' % fea_names)
         sys.exit(0)
 
     snt_lst = []
@@ -1186,14 +1187,16 @@ def parse_lab_field(lab):
     # Check consistency of feature lists
     for lab_fold in lab_folders:
         if not (os.path.isdir(lab_fold)):
-            sys.stderr.write("ERROR: The path \"%s\" specified in the field  \"lab_folder\" of the config file does not exists! \n" % lab_fold)
+            sys.stderr.write(
+                "ERROR: The path \"%s\" specified in the field  \"lab_folder\" of the config file does not exists! \n" % lab_fold)
             sys.exit(0)
 
     return [lab_names, lab_folders, lab_opts]
 
 
 def compute_n_chunks(out_folder, data_list, ep, N_ep_str_format, step):
-    list_ck = sorted(glob.glob(out_folder + '/exp_files/' + step + '_' + data_list + '_ep' + format(ep, N_ep_str_format) + '*.lst'))
+    list_ck = sorted(
+        glob.glob(out_folder + '/exp_files/' + step + '_' + data_list + '_ep' + format(ep, N_ep_str_format) + '*.lst'))
     last_ck = list_ck[-1]
     N_ck = int(re.findall('_ck(.+)_', last_ck)[-1].split('_')[0]) + 1
     return N_ck
@@ -1216,7 +1219,7 @@ def parse_model_field(cfg_file):
     fea_lst = list(re.findall('fea_name=(.*)\n', config['dataset1']['fea'].replace(' ', '')))
     lab_lst = list(re.findall('lab_name=(.*)\n', config['dataset1']['lab'].replace(' ', '')))
     arch_lst = list(re.findall('arch_name=(.*)\n', open(cfg_file, 'r').read().replace(' ', '')))
-    possible_operations = re.findall('(.*)\((.*),(.*)\)\n', proto_model)
+    possible_operations = re.findall('(.*)((.*),(.*))\n', proto_model)
 
     possible_inputs = fea_lst
     model_arch = list(filter(None, model.replace(' ', '').split('\n')))
@@ -1224,11 +1227,11 @@ def parse_model_field(cfg_file):
     # Reading the model field line by line
     for line in model_arch:
 
-        pattern = '(.*)=(.*)\((.*),(.*)\)'
+        pattern = '(.*)=(.*)((.*),(.*))'
 
         if not re.match(pattern, line):
             sys.stderr.write(
-                'ERROR: all the entries must be of the following type: output=operation(str,str), got (%s)\n' % (line))
+                'ERROR: all the entries must be of the following type: output=operation(str,str), got (%s)\n' % line)
             sys.exit(0)
         else:
 
@@ -1246,21 +1249,21 @@ def parse_model_field(cfg_file):
                             if inps[k - 1] not in arch_lst:
                                 sys.stderr.write(
                                     'ERROR: the architecture \"%s\" is not in the architecture lists of the config file (possible architectures are %s)\n' % (
-                                    inps[k - 1], arch_lst))
+                                        inps[k - 1], arch_lst))
                                 sys.exit(0)
 
                         if possible_operations[i][k] == 'label':
                             if inps[k - 1] not in lab_lst:
                                 sys.stderr.write(
                                     'ERROR: the label \"%s\" is not in the label lists of the config file (possible labels are %s)\n' % (
-                                    inps[k - 1], lab_lst))
+                                        inps[k - 1], lab_lst))
                                 sys.exit(0)
 
                         if possible_operations[i][k] == 'input':
                             if inps[k - 1] not in possible_inputs:
                                 sys.stderr.write(
                                     'ERROR: the input \"%s\" is not defined before (possible inputs are %s)\n' % (
-                                    inps[k - 1], possible_inputs))
+                                        inps[k - 1], possible_inputs))
                                 sys.exit(0)
 
                         if possible_operations[i][k] == 'float':
@@ -1278,10 +1281,10 @@ def parse_model_field(cfg_file):
 
             if found == False:
                 sys.stderr.write(
-                    ('ERROR: operation \"%s\" does not exists (not defined into the model proto file)\n' % (operation)))
+                    ('ERROR: operation \"%s\" does not exists (not defined into the model proto file)\n' % operation))
                 sys.exit(0)
 
-    # Check for the mandatory fiels
+    # Check for the mandatory files
     if 'loss_final' not in "".join(model_arch):
         sys.stderr.write('ERROR: the variable loss_final should be defined in model\n')
         sys.exit(0)
@@ -1293,7 +1296,7 @@ def parse_model_field(cfg_file):
 
 def terminal_node_detection(model_arch, node):
     terminal = True
-    pattern = '(.*)=(.*)\((.*),(.*)\)'
+    pattern = '(.*)=(.*)((.*),(.*))'
 
     for line in model_arch:
         [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
@@ -1307,7 +1310,7 @@ def create_block_connection(lst_inp, model_arch, diag_lines, cnt_names, arch_dic
     if lst_inp == []:
         return [[], [], diag_lines]
 
-    pattern = '(.*)=(.*)\((.*),(.*)\)'
+    pattern = '(.*)=(.*)((.*),(.*))'
 
     arch_current = []
     output_conn = []
@@ -1361,7 +1364,7 @@ def create_block_diagram(cfg_file):
     model = config['model']['model']
 
     # Reading fea,lab arch architectures from the cfg file
-    pattern = '(.*)=(.*)\((.*),(.*)\)'
+    pattern = '(.*)=(.*)((.*),(.*))'
 
     fea_lst = list(re.findall('fea_name=(.*)\n', config['dataset1']['fea'].replace(' ', '')))
     lab_lst = list(re.findall('lab_name=(.*)\n', config['dataset1']['lab'].replace(' ', '')))
@@ -1371,7 +1374,7 @@ def create_block_diagram(cfg_file):
 
     model_arch = list(filter(None, model.replace(' ', '').split('\n')))
 
-    diag_lines = 'blockdiag {\n';
+    diag_lines = 'blockdiag {\n'
 
     cnt = 0
     cnt_names = []
@@ -1486,7 +1489,7 @@ def list_fea_lab_arch(config):  # cancel
     fea_field = config['data_chunk']['fea']
     lab_field = config['data_chunk']['lab']
 
-    pattern = '(.*)=(.*)\((.*),(.*)\)'
+    pattern = '(.*)=(.*)((.*),(.*))'
 
     for line in model:
         [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
@@ -1558,7 +1561,7 @@ def dict_fea_lab_arch(config, fea_only):
     fea_field = config['data_chunk']['fea']
     lab_field = config['data_chunk']['lab']
 
-    pattern = '(.*)=(.*)\((.*),(.*)\)'
+    pattern = '(.*)=(.*)((.*),(.*))'
 
     for line in model:
         [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
@@ -1673,7 +1676,7 @@ def compute_cw_max(fea_dict):
 
 
 def model_init(inp_out_dict, model, config, arch_dict, use_cuda, multi_gpu, to_do):
-    pattern = '(.*)=(.*)\((.*),(.*)\)'
+    pattern = '(.*)=(.*)((.*),(.*))'
 
     nns = {}
     costs = {}
@@ -1703,7 +1706,7 @@ def model_init(inp_out_dict, model, config, arch_dict, use_cuda, multi_gpu, to_d
                 net.cuda()
 
             if to_do == 'train':
-                if not (arch_freeze_flag):
+                if not arch_freeze_flag:
                     net.train()
                 else:
                     # Switch to eval modality if architecture is frozen (mainly for batch_norm/dropout functions)
@@ -1924,20 +1927,20 @@ def dump_epoch_results(res_file_path, ep, tr_data_lst, tr_loss_tot, tr_error_tot
     N_ep_str_format = '0' + str(max(math.ceil(np.log10(N_ep)), 1)) + 'd'
     res_file = open(res_file_path, "a")
     res_file.write('ep=%s tr=%s loss=%s err=%s ' % (
-    format(ep, N_ep_str_format), tr_data_lst, format(tr_loss_tot / len(tr_data_lst), "0.3f"),
-    format(tr_error_tot / len(tr_data_lst), "0.3f")))
+        format(ep, N_ep_str_format), tr_data_lst, format(tr_loss_tot / len(tr_data_lst), "0.3f"),
+        format(tr_error_tot / len(tr_data_lst), "0.3f")))
     print(' ')
     print('----- Summary epoch %s / %s' % (format(ep, N_ep_str_format), format(N_ep - 1, N_ep_str_format)))
     print('Training on %s' % (tr_data_lst))
     print('Loss = %s | err = %s ' % (
-    format(tr_loss_tot / len(tr_data_lst), "0.3f"), format(tr_error_tot / len(tr_data_lst), "0.3f")))
+        format(tr_loss_tot / len(tr_data_lst), "0.3f"), format(tr_error_tot / len(tr_data_lst), "0.3f")))
     print('-----')
     for valid_data in valid_data_lst:
         res_file.write('valid=%s loss=%s err=%s ' % (valid_data, format(valid_peformance_dict[valid_data][0], "0.3f"),
                                                      format(valid_peformance_dict[valid_data][1], "0.3f")))
         print('Validating on %s' % (valid_data))
         print('Loss = %s | err = %s ' % (
-        format(valid_peformance_dict[valid_data][0], "0.3f"), format(valid_peformance_dict[valid_data][1], "0.3f")))
+            format(valid_peformance_dict[valid_data][0], "0.3f"), format(valid_peformance_dict[valid_data][1], "0.3f")))
 
     print('-----')
     for lr_arch in lr.keys():
@@ -2161,7 +2164,7 @@ def expand_str_ep(str_compact, type_inp, N_ep, split_elem, mult_elem):
     if len(lst_out) != N_ep:
         sys.stderr.write(
             'The total number of elements specified in the string "%s" is equal to %i not equal to the total number of epochs %s.\n' % (
-            str_compact, len(lst_out), N_ep))
+                str_compact, len(lst_out), N_ep))
         sys.exit(0)
 
     return lst_out

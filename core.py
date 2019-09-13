@@ -131,7 +131,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
 
     # ***** Minibatch Processing loop********
     if seq_model or to_do == 'forward':
-        N_snt = len(data_name)
+        N_snt = len(data_name)  # num of sentences?
         N_batches = int(N_snt / batch_size)
     else:
         N_ex_tr = data_set.shape[0]
@@ -292,7 +292,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
     data_set = shared_list[5]
 
     # converting numpy tensors into pytorch tensors and put them on GPUs if specified
-    if not (save_gpumem) and use_cuda:
+    if not save_gpumem and use_cuda:
         data_set = torch.from_numpy(data_set).float().cuda()
     else:
         data_set = torch.from_numpy(data_set).float()

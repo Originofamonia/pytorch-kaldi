@@ -122,10 +122,10 @@ class MLP(nn.Module):
 
         # Applying Layer/Batch Norm
         if bool(self.dnn_use_laynorm_inp):
-            x = self.ln0((x))
+            x = self.ln0(x)
 
         if bool(self.dnn_use_batchnorm_inp):
-            x = self.bn0((x))
+            x = self.bn0(x)
 
         for i in range(self.N_dnn_lay):
 

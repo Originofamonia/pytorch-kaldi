@@ -199,9 +199,9 @@ for ep in range(N_ep):
 
             # update pt_file (used to initialized the DNN for the next chunk)
             for pt_arch in pt_files.keys():
-                pt_files[pt_arch] = out_folder + '/exp_files/train_' + tr_data + '_ep' + format(ep,
-                                                                                                N_ep_str_format) + '_ck' + format(
-                    ck, N_ck_str_format) + '_' + pt_arch + '.pkl'
+                pt_files[pt_arch] = out_folder + '/exp_files/train_' + tr_data + '_ep' \
+                                    + format(ep, N_ep_str_format) + '_ck' + format(ck, N_ck_str_format) \
+                                    + '_' + pt_arch + '.pkl'
 
             # remove previous pkl files
             if len(model_files_past.keys()) > 0:
