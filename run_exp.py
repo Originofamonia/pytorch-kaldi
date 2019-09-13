@@ -23,9 +23,10 @@ import importlib
 import math
 
 # Reading global cfg file (first argument-mandatory file)
-cfg_file = sys.argv[1]
+# cfg_file = sys.argv[1]
+cfg_file = 'cfg/TIMIT_baselines/TIMIT_MLP_mfcc_basic.cfg'
 if not (os.path.exists(cfg_file)):
-    sys.stderr.write('ERROR: The config file %s does not exist!\n' % (cfg_file))
+    sys.stderr.write('ERROR: The config file %s does not exist!\n' % cfg_file)
     sys.exit(0)
 else:
     config = configparser.ConfigParser()
@@ -66,7 +67,7 @@ cfg_file = out_folder + '/conf.cfg'
 with open(cfg_file, 'w') as configfile:
     config.write(configfile)
 
-# Load the run_nn function from core libriary
+# Load the run_nn function from core library
 # The run_nn is a function that process a single chunk of data
 run_nn_script = config['exp']['run_nn_script'].split('.py')[0]
 module = importlib.import_module('core')
@@ -261,11 +262,8 @@ for ep in range(N_ep):
                 processed_first = False
 
                 if not (os.path.exists(info_file)):
-                    sys.stderr.write(
-                        "ERROR: validation on epoch %i, chunk %i of dataset %s not done! File %s does not exist.\nSee %s \n" % (
-                        ep, ck, valid_data, info_file, log_file))
+                    sys.stderr.write("ERROR: validation on epoch %i, chunk %i of dataset %s not done! File %s does not exist.\nSee %s \n" % (ep, ck, valid_data, info_file, log_file))
                     sys.exit(0)
-
             # update the operation counter
             op_counter += 1
 
@@ -307,7 +305,6 @@ for forward_data in forward_data_lst:
     N_ck_str_format = '0' + str(max(math.ceil(np.log10(N_ck_forward)), 1)) + 'd'
 
     for ck in range(N_ck_forward):
-
         if not is_production:
             print('Testing %s chunk = %i / %i' % (forward_data, ck + 1, N_ck_forward))
         else:
@@ -323,7 +320,6 @@ for forward_data in forward_data_lst:
 
         # Do forward if the chunk was not already processed
         if not (os.path.exists(info_file)):
-
             # Doing forward
 
             # getting the next chunk
@@ -359,9 +355,7 @@ forward_dec_outs = list(map(strtobool, config['forward']['require_decoding'].spl
 for data in forward_data_lst:
     for k in range(len(forward_outs)):
         if forward_dec_outs[k]:
-
             print('Decoding %s output %s' % (data, forward_outs[k]))
-
             info_file = out_folder + '/exp_files/decoding_' + data + '_' + forward_outs[k] + '.info'
 
             # create decode config file
