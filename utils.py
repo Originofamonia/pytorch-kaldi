@@ -1011,9 +1011,9 @@ def create_lists(config):
                     # print(snt.split(',')[i])
                     forward_chunks_fea_split.append(snt.split(',')[i])
 
-                output_lst_file = out_folder + '/exp_files/forward_' + dataset + '_ep' + format(ep,
-                                                                                                N_ep_str_format) + '_ck' + format(
-                    ck, N_ck_str_format) + '_' + fea_names[i] + '.lst'
+                output_lst_file = out_folder + '/exp_files/forward_' + dataset + '_ep' \
+                                  + format(ep, N_ep_str_format) + '_ck' + format(ck, N_ck_str_format) + '_' \
+                                  + fea_names[i] + '.lst'
                 f = open(output_lst_file, 'w')
                 forward_chunks_fea_wr = map(lambda x: x + '\n', forward_chunks_fea_split)
                 f.writelines(forward_chunks_fea_wr)
@@ -1219,7 +1219,7 @@ def parse_model_field(cfg_file):
     fea_lst = list(re.findall('fea_name=(.*)\n', config['dataset1']['fea'].replace(' ', '')))
     lab_lst = list(re.findall('lab_name=(.*)\n', config['dataset1']['lab'].replace(' ', '')))
     arch_lst = list(re.findall('arch_name=(.*)\n', open(cfg_file, 'r').read().replace(' ', '')))
-    possible_operations = re.findall('(.*)((.*),(.*))\n', proto_model)
+    possible_operations = re.findall('(.*)\((.*),(.*)\)\n', proto_model)
 
     possible_inputs = fea_lst
     model_arch = list(filter(None, model.replace(' ', '').split('\n')))
@@ -1227,15 +1227,15 @@ def parse_model_field(cfg_file):
     # Reading the model field line by line
     for line in model_arch:
 
-        pattern = '(.*)=(.*)((.*),(.*))'
+        pattern = '(.*)=(.*)\((.*),(.*)\)'
 
         if not re.match(pattern, line):
             sys.stderr.write(
                 'ERROR: all the entries must be of the following type: output=operation(str,str), got (%s)\n' % line)
             sys.exit(0)
         else:
-
-            # Analyze line and chech if it is compliant with proto_model
+            # Analyze line and check if it is compliant with proto_model
+            test = re.findall(pattern, line)[0]
             [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
             inps = [inp1, inp2]
 
@@ -1296,7 +1296,7 @@ def parse_model_field(cfg_file):
 
 def terminal_node_detection(model_arch, node):
     terminal = True
-    pattern = '(.*)=(.*)((.*),(.*))'
+    pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
 
     for line in model_arch:
         [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
@@ -1307,10 +1307,10 @@ def terminal_node_detection(model_arch, node):
 
 
 def create_block_connection(lst_inp, model_arch, diag_lines, cnt_names, arch_dict):
-    if lst_inp == []:
+    if not lst_inp:
         return [[], [], diag_lines]
 
-    pattern = '(.*)=(.*)((.*),(.*))'
+    pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
 
     arch_current = []
     output_conn = []
@@ -1364,7 +1364,7 @@ def create_block_diagram(cfg_file):
     model = config['model']['model']
 
     # Reading fea,lab arch architectures from the cfg file
-    pattern = '(.*)=(.*)((.*),(.*))'
+    pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
 
     fea_lst = list(re.findall('fea_name=(.*)\n', config['dataset1']['fea'].replace(' ', '')))
     lab_lst = list(re.findall('lab_name=(.*)\n', config['dataset1']['lab'].replace(' ', '')))
@@ -1489,7 +1489,7 @@ def list_fea_lab_arch(config):  # cancel
     fea_field = config['data_chunk']['fea']
     lab_field = config['data_chunk']['lab']
 
-    pattern = '(.*)=(.*)((.*),(.*))'
+    pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
 
     for line in model:
         [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
@@ -1561,7 +1561,7 @@ def dict_fea_lab_arch(config, fea_only):
     fea_field = config['data_chunk']['fea']
     lab_field = config['data_chunk']['lab']
 
-    pattern = '(.*)=(.*)((.*),(.*))'
+    pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
 
     for line in model:
         [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
@@ -1676,7 +1676,7 @@ def compute_cw_max(fea_dict):
 
 
 def model_init(inp_out_dict, model, config, arch_dict, use_cuda, multi_gpu, to_do):
-    pattern = '(.*)=(.*)((.*),(.*))'
+    pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
 
     nns = {}
     costs = {}
@@ -1796,7 +1796,7 @@ def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out
                   forward_outs):
     # Forward Step
     outs_dict = {}
-    pattern = '(.*)=(.*)\((.*),(.*)\)'
+    pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
 
     # adding input features to out_dict:
     for fea in fea_dict.keys():
