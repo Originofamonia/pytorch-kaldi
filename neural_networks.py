@@ -19,6 +19,7 @@ import math
 # or you can install it from source code: https://github.com/taolei87/sru.
 # import sru
 
+
 class LayerNorm(nn.Module):
 
     def __init__(self, features, eps=1e-6):
@@ -53,11 +54,11 @@ def act_fun(act_type):
         return nn.LogSoftmax(dim=1)
 
     if act_type == "linear":
-        return nn.LeakyReLU(1)  # initializzed like this, but not used in forward!
+        return nn.LeakyReLU(1)  # initialized like this, but not used in forward!
 
 
 class MLP(nn.Module):
-    def __init__(self, options, inp_dim):
+    def __init__(self, options, inp_dim):  # 读取cfg文件里面该层神经网络的信息  并初始化该层神经网络
         super(MLP, self).__init__()
 
         self.input_dim = inp_dim
@@ -130,18 +131,27 @@ class MLP(nn.Module):
         for i in range(self.N_dnn_lay):
 
             if self.dnn_use_laynorm[i] and not (self.dnn_use_batchnorm[i]):
+                # print()
                 x = self.drop[i](self.act[i](self.ln[i](self.wx[i](x))))
 
             if self.dnn_use_batchnorm[i] and not (self.dnn_use_laynorm[i]):
                 x = self.drop[i](self.act[i](self.bn[i](self.wx[i](x))))
 
-            if self.dnn_use_batchnorm[i] == True and self.dnn_use_laynorm[i] == True:
+            if self.dnn_use_batchnorm[i] and self.dnn_use_laynorm[i]:
                 x = self.drop[i](self.act[i](self.bn[i](self.ln[i](self.wx[i](x)))))
 
-            if self.dnn_use_batchnorm[i] == False and self.dnn_use_laynorm[i] == False:
+            if not self.dnn_use_batchnorm[i] and not self.dnn_use_laynorm[i]:
                 x = self.drop[i](self.act[i](self.wx[i](x)))
 
         return x
+
+
+class DFR_MLP(MLP):
+    def __init__(self, options, inp_dim):
+        super(DFR_MLP, self).__init__(options, inp_dim)
+        self.res = nn.ModuleList([])
+        self.res.append(torch.new_zeros())  # 本来想获取wx[0](x)的dim，但是这里没有x。所以需要batch size和wx[0]的dim。
+
 
 
 class LSTM_cudnn(nn.Module):
@@ -255,16 +265,16 @@ class LSTM(nn.Module):
 
         # Reading parameters
         self.input_dim = inp_dim
-        self.lstm_lay = list(map(int, options['lstm_lay'].split(',')))
-        self.lstm_drop = list(map(float, options['lstm_drop'].split(',')))
+        self.lstm_lay = list(map(int, options['lstm_lay'].split(',')))  # 每个lay的神经元个数
+        self.lstm_drop = list(map(float, options['lstm_drop'].split(',')))  # dropout
         self.lstm_use_batchnorm = list(map(strtobool, options['lstm_use_batchnorm'].split(',')))
         self.lstm_use_laynorm = list(map(strtobool, options['lstm_use_laynorm'].split(',')))
         self.lstm_use_laynorm_inp = strtobool(options['lstm_use_laynorm_inp'])
         self.lstm_use_batchnorm_inp = strtobool(options['lstm_use_batchnorm_inp'])
-        self.lstm_act = options['lstm_act'].split(',')
-        self.lstm_orthinit = strtobool(options['lstm_orthinit'])
+        self.lstm_act = options['lstm_act'].split(',')  # activation function
+        self.lstm_orthinit = strtobool(options['lstm_orthinit'])  # 正交初始化
 
-        self.bidir = strtobool(options['lstm_bidir'])
+        self.bidir = strtobool(options['lstm_bidir'])  # bi-directional
         self.use_cuda = strtobool(options['use_cuda'])
         self.to_do = options['to_do']
 
@@ -274,8 +284,8 @@ class LSTM(nn.Module):
             self.test_flag = True
 
         # List initialization
-        self.wfx = nn.ModuleList([])  # Forget
-        self.ufh = nn.ModuleList([])  # Forget
+        self.wfx = nn.ModuleList([])  # Forget weight(输入值)
+        self.ufh = nn.ModuleList([])  # Forget weight(上一时刻状态值)
 
         self.wix = nn.ModuleList([])  # Input
         self.uih = nn.ModuleList([])  # Input
@@ -296,25 +306,26 @@ class LSTM(nn.Module):
 
         # Input layer normalization
         if self.lstm_use_laynorm_inp:
-            self.ln0 = LayerNorm(self.input_dim)
+            self.ln0 = LayerNorm(self.input_dim)  # 输入层normalization
 
         # Input batch normalization
         if self.lstm_use_batchnorm_inp:
             self.bn0 = nn.BatchNorm1d(self.input_dim, momentum=0.05)
 
-        self.N_lstm_lay = len(self.lstm_lay)
+        self.N_lstm_lay = len(self.lstm_lay)  # 层数
 
-        current_input = self.input_dim
+        current_input = self.input_dim  # 当前的输入维度
 
         # Initialization of hidden layers
 
         for i in range(self.N_lstm_lay):
 
             # Activations
-            self.act.append(act_fun(self.lstm_act[i]))
+            self.act.append(act_fun(self.lstm_act[i]))  # 添加该层的激活函数
 
-            add_bias = True
+            add_bias = True  # 是否添加偏置
 
+            # 如果使用了laynorm 或者 batchnorm，则偏置无效。 因为使用了norm以后，数据的分布已经改变为正态分布，故偏置已经无意义
             if self.lstm_use_laynorm[i] or self.lstm_use_batchnorm[i]:
                 add_bias = False
 
@@ -324,14 +335,14 @@ class LSTM(nn.Module):
             self.wox.append(nn.Linear(current_input, self.lstm_lay[i], bias=add_bias))
             self.wcx.append(nn.Linear(current_input, self.lstm_lay[i], bias=add_bias))
 
-            # Recurrent connections
+            # Recurrent connections  循环连接
             self.ufh.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
             self.uih.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
             self.uoh.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
             self.uch.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
 
             if self.lstm_orthinit:
-                nn.init.orthogonal_(self.ufh[i].weight)
+                nn.init.orthogonal_(self.ufh[i].weight)  # 将权重进行正交初始化
                 nn.init.orthogonal_(self.uih[i].weight)
                 nn.init.orthogonal_(self.uoh[i].weight)
                 nn.init.orthogonal_(self.uch[i].weight)
@@ -344,12 +355,12 @@ class LSTM(nn.Module):
 
             self.ln.append(LayerNorm(self.lstm_lay[i]))
 
-            if self.bidir:
+            if self.bidir:  # 是否是双向的LSTM
                 current_input = 2 * self.lstm_lay[i]
             else:
                 current_input = self.lstm_lay[i]
 
-        self.out_dim = self.lstm_lay[i] + self.bidir * self.lstm_lay[i]
+        self.out_dim = self.lstm_lay[i] + self.bidir * self.lstm_lay[i]  # 输出的维数 self.bidir是bool值
 
     def forward(self, x):
 
@@ -358,20 +369,23 @@ class LSTM(nn.Module):
             x = self.ln0((x))
 
         if bool(self.lstm_use_batchnorm_inp):
+            # 首先展开x成为一个二维数组，并进行batch normalization
             x_bn = self.bn0(x.view(x.shape[0] * x.shape[1], x.shape[2]))
-            x = x_bn.view(x.shape[0], x.shape[1], x.shape[2])
+            x = x_bn.view(x.shape[0], x.shape[1], x.shape[2])  # 然后将x变成原先的shape
 
         for i in range(self.N_lstm_lay):
 
             # Initial state and concatenation
             if self.bidir:
                 h_init = torch.zeros(2 * x.shape[1], self.lstm_lay[i])
-                x = torch.cat([x, flip(x, 0)], 1)
+                x = torch.cat([x, flip(x, 0)], 1)  # cat为拼接函数   1表示横向拼接    0表示纵向拼接
             else:
                 h_init = torch.zeros(x.shape[1], self.lstm_lay[i])
 
-            # Drop mask initilization (same mask for all time steps)
-            if self.test_flag == False:
+            # Drop mask initialization (same mask for all time steps)
+            if not self.test_flag:
+                # bernoulli 伯努利分布（两点分布）drop_mask首先是一个全部都为0.8，shape=(shape[0],shape[1])的矩阵
+                # 然后经过伯努利分布得到各点值为0或1的矩阵
                 drop_mask = torch.bernoulli(torch.Tensor(h_init.shape[0], h_init.shape[1]).fill_(1 - self.lstm_drop[i]))
             else:
                 drop_mask = torch.FloatTensor([1 - self.lstm_drop[i]])
@@ -380,7 +394,7 @@ class LSTM(nn.Module):
                 h_init = h_init.cuda()
                 drop_mask = drop_mask.cuda()
 
-            # Feed-forward affine transformations (all steps in parallel)
+            # Feed-forward affine transformations (all steps in parallel) y = WX + b
             wfx_out = self.wfx[i](x)
             wix_out = self.wix[i](x)
             wox_out = self.wox[i](x)
@@ -408,7 +422,7 @@ class LSTM(nn.Module):
             for k in range(x.shape[0]):
 
                 # LSTM equations
-                ft = torch.sigmoid(wfx_out[k] + self.ufh[i](ht))
+                ft = torch.sigmoid(wfx_out[k] + self.ufh[i](ht))  # wx_out之前已经计算过了 uh还没有计算过
                 it = torch.sigmoid(wix_out[k] + self.uih[i](ht))
                 ot = torch.sigmoid(wox_out[k] + self.uoh[i](ht))
                 ct = it * self.act[i](wcx_out[k] + self.uch[i](ht)) * drop_mask + ft * ct
@@ -419,7 +433,7 @@ class LSTM(nn.Module):
 
                 hiddens.append(ht)
 
-            # Stacking hidden states
+            # Stacking hidden states 合并隐藏状态，将不同时刻得到的隐藏状态合并成同一个tensor，沿时间轴
             h = torch.stack(hiddens)
 
             # Bidirectional concatenations

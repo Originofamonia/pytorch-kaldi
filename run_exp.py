@@ -48,7 +48,7 @@ cfg_file_proto = config['cfg_proto']['cfg_proto']
 [config, name_data, name_arch] = check_cfg(cfg_file, config, cfg_file_proto)
 
 # Read cfg file options
-is_production = strtobool(config['exp']['production'])
+is_production = strtobool(config['exp']['production'])  # “产品” 模式   不训练模型，只使用之前训练好的模型进行正向传播和解码
 cfg_file_proto_chunk = config['cfg_proto']['cfg_proto_chunk']
 
 cmd = config['exp']['cmd']
@@ -68,7 +68,7 @@ with open(cfg_file, 'w') as configfile:
     config.write(configfile)
 
 # Load the run_nn function from core library
-# The run_nn is a function that process a single chunk of data
+# The run_nn is a function that process a single chunk of data. run_nn是用来处理单个块数据的函数
 run_nn_script = config['exp']['run_nn_script'].split('.py')[0]
 module = importlib.import_module('core')
 run_nn = getattr(module, run_nn_script)
@@ -82,12 +82,12 @@ create_configs(config)
 print("- Chunk creation......OK!\n")
 
 # create res_file
-res_file_path = out_folder + '/res.res'
+res_file_path = out_folder + '/res.res'  # 文件res.res总结了各个时期的训练和评估表现。
 res_file = open(res_file_path, "w")
 res_file.close()
 
 # Learning rates and architecture-specific optimization parameters
-arch_lst = get_all_archs(config)
+arch_lst = get_all_archs(config)  # 获得所有层模型的cfg数据
 lr = {}
 auto_lr_annealing = {}
 improvement_threshold = {}
@@ -95,23 +95,23 @@ halving_factor = {}
 pt_files = {}
 
 for arch in arch_lst:
-    lr[arch] = expand_str_ep(config[arch]['arch_lr'], 'float', N_ep, '|', '*')
+    lr[arch] = expand_str_ep(config[arch]['arch_lr'], 'float', N_ep, '|', '*')  # 学习率
     if len(config[arch]['arch_lr'].split('|')) > 1:
         auto_lr_annealing[arch] = False
     else:
         auto_lr_annealing[arch] = True
     improvement_threshold[arch] = float(config[arch]['arch_improvement_threshold'])
-    halving_factor[arch] = float(config[arch]['arch_halving_factor'])
-    pt_files[arch] = config[arch]['arch_pretrain_file']
+    halving_factor[arch] = float(config[arch]['arch_halving_factor'])  # 对半影响
+    pt_files[arch] = config[arch]['arch_pretrain_file']  # pre-train模型
 
 # If production, skip training and forward directly from last saved models
 if is_production:
-    ep = N_ep - 1
+    ep = N_ep - 1  # 跳过TRAINING LOOP
     N_ep = 0
     model_files = {}
 
     for arch in pt_files.keys():
-        model_files[arch] = out_folder + '/exp_files/final_' + arch + '.pkl'
+        model_files[arch] = out_folder + '/exp_files/final_' + arch + '.pkl'  # .pkl模型是用于语音解码的最终模型
 
 op_counter = 1  # used to dected the next configuration file from the list_chunks.txt
 
@@ -146,12 +146,11 @@ for ep in range(N_ep):
         N_ck_str_format = '0' + str(max(math.ceil(np.log10(N_ck_tr)), 1)) + 'd'
 
         # ***Epoch training***
-        for ck in range(N_ck_tr):
+        for ck in range(N_ck_tr):  # 训练模型
 
             # paths of the output files (info,model,chunk_specific cfg file)
-            info_file = out_folder + '/exp_files/train_' + tr_data + '_ep' + format(ep,
-                                                                                    N_ep_str_format) + '_ck' + format(
-                ck, N_ck_str_format) + '.info'
+            info_file = out_folder + '/exp_files/train_' + tr_data + '_ep' + format(ep, N_ep_str_format) + '_ck' \
+                        + format(ck, N_ck_str_format) + '.info'  # train.info文件报告每个训练块的损失和错误性能。
 
             if ep + ck == 0:
                 model_files_past = {}
@@ -162,9 +161,8 @@ for ep in range(N_ep):
             for arch in pt_files.keys():
                 model_files[arch] = info_file.replace('.info', '_' + arch + '.pkl')
 
-            config_chunk_file = out_folder + '/exp_files/train_' + tr_data + '_ep' + format(ep,
-                                                                                            N_ep_str_format) + '_ck' + format(
-                ck, N_ck_str_format) + '.cfg'
+            config_chunk_file = out_folder + '/exp_files/train_' + tr_data + '_ep' + format(ep, N_ep_str_format) \
+                                + '_ck' + format(ck, N_ck_str_format) + '.cfg'
 
             # update learning rate in the cfg file (if needed)
             change_lr_cfg(config_chunk_file, lr, ep)
@@ -177,7 +175,7 @@ for ep in range(N_ep):
                 # getting the next chunk
                 next_config_file = cfg_file_list[op_counter]
 
-                # run chunk processing
+                # run chunk processing, 训练模型
                 [data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict] = run_nn(data_name, data_set,
                                                                                               data_end_index, fea_dict,
                                                                                               lab_dict, arch_dict,
@@ -220,13 +218,13 @@ for ep in range(N_ep):
 
         # ***Epoch validation***
         if ep > 0:
-            # store previous-epoch results (useful for learnig rate anealling)
+            # store previous-epoch results (useful for learning rate annealing)
             valid_peformance_dict_prev = valid_peformance_dict
 
         valid_peformance_dict = {}
         tot_time = tr_time
 
-    for valid_data in valid_data_lst:
+    for valid_data in valid_data_lst:  # 验证数据集
         # Compute the number of chunks for each validation dataset
         N_ck_valid = compute_n_chunks(out_folder, valid_data, ep, N_ep_str_format, 'valid')
         N_ck_str_format = '0' + str(max(math.ceil(np.log10(N_ck_valid)), 1)) + 'd'
@@ -234,12 +232,10 @@ for ep in range(N_ep):
         for ck in range(N_ck_valid):
 
             # paths of the output files
-            info_file = out_folder + '/exp_files/valid_' + valid_data + '_ep' + format(ep,
-                                                                                       N_ep_str_format) + '_ck' + format(
-                ck, N_ck_str_format) + '.info'
-            config_chunk_file = out_folder + '/exp_files/valid_' + valid_data + '_ep' + format(ep,
-                                                                                               N_ep_str_format) + '_ck' + format(
-                ck, N_ck_str_format) + '.cfg'
+            info_file = out_folder + '/exp_files/valid_' + valid_data + '_ep' + format(ep, N_ep_str_format) + '_ck'\
+                        + format(ck, N_ck_str_format) + '.info'
+            config_chunk_file = out_folder + '/exp_files/valid_' + valid_data + '_ep' + format(ep, N_ep_str_format) \
+                                + '_ck' + format(ck, N_ck_str_format) + '.cfg'
 
             # Do validation if the chunk was not already processed
             if not (os.path.exists(info_file)):
@@ -262,7 +258,8 @@ for ep in range(N_ep):
                 processed_first = False
 
                 if not (os.path.exists(info_file)):
-                    sys.stderr.write("ERROR: validation on epoch %i, chunk %i of dataset %s not done! File %s does not exist.\nSee %s \n" % (ep, ck, valid_data, info_file, log_file))
+                    sys.stderr.write("ERROR: validation on epoch %i, chunk %i of dataset %s not done! File %s "
+                                     "does not exist.\nSee %s \n" % (ep, ck, valid_data, info_file, log_file))
                     sys.exit(0)
             # update the operation counter
             op_counter += 1
@@ -274,11 +271,11 @@ for ep in range(N_ep):
         valid_peformance_dict[valid_data] = [valid_loss, valid_error, valid_time]
         tot_time = tot_time + valid_time
 
-    # Print results in both res_file and stdout
+    # Print results in both res_file and stdout. 打印结果到输出文件中
     dump_epoch_results(res_file_path, ep, tr_data_lst, tr_loss_tot, tr_error_tot, tot_time, valid_data_lst,
                        valid_peformance_dict, lr, N_ep)
 
-    # Check for learning rate annealing
+    # Check for learning rate annealing 学习率退火处理
     if ep > 0:
         # computing average validation error (on all the dataset specified)
         err_valid_mean = np.mean(np.asarray(list(valid_peformance_dict.values()))[:, 1])
@@ -292,16 +289,16 @@ for ep in range(N_ep):
                     for i in range(ep + 1, N_ep):
                         lr[lr_arch][i] = str(new_lr_value)
 
-# Training has ended, copy the last .pkl to final_arch.pkl for production
+# Training has ended, copy the last .pkl to final_arch.pkl for production. 完成训练，pkl是模型文件
 for pt_arch in pt_files.keys():
     if os.path.exists(model_files[pt_arch]) and not os.path.exists(out_folder + '/exp_files/final_' + pt_arch + '.pkl'):
         copyfile(model_files[pt_arch], out_folder + '/exp_files/final_' + pt_arch + '.pkl')
 
 # --------FORWARD--------#
-for forward_data in forward_data_lst:
+for forward_data in forward_data_lst:  # forward_data_lst就是配置文件中的 forward_with
 
     # Compute the number of chunks
-    N_ck_forward = compute_n_chunks(out_folder, forward_data, ep, N_ep_str_format, 'forward')
+    N_ck_forward = compute_n_chunks(out_folder, forward_data, ep, N_ep_str_format, 'forward')  # chunk块数, 可用数字1代替
     N_ck_str_format = '0' + str(max(math.ceil(np.log10(N_ck_forward)), 1)) + 'd'
 
     for ck in range(N_ck_forward):
@@ -311,12 +308,10 @@ for forward_data in forward_data_lst:
             print('Forwarding %s chunk = %i / %i' % (forward_data, ck + 1, N_ck_forward))
 
         # output file
-        info_file = out_folder + '/exp_files/forward_' + forward_data + '_ep' + format(ep,
-                                                                                       N_ep_str_format) + '_ck' + format(
-            ck, N_ck_str_format) + '.info'
-        config_chunk_file = out_folder + '/exp_files/forward_' + forward_data + '_ep' + format(ep,
-                                                                                               N_ep_str_format) + '_ck' + format(
-            ck, N_ck_str_format) + '.cfg'
+        info_file = out_folder + '/exp_files/forward_' + forward_data + '_ep' + format(ep, N_ep_str_format) + '_ck' \
+                    + format(ck, N_ck_str_format) + '.info'  # info文件, 保存计算时间
+        config_chunk_file = out_folder + '/exp_files/forward_' + forward_data + '_ep' + format(ep, N_ep_str_format) \
+                            + '_ck' + format(ck, N_ck_str_format) + '.cfg'  # cfg文件保存该步的cfg配置   这里的cfg文件以前就存在
 
         # Do forward if the chunk was not already processed
         if not (os.path.exists(info_file)):
@@ -325,7 +320,7 @@ for forward_data in forward_data_lst:
             # getting the next chunk
             next_config_file = cfg_file_list[op_counter]
 
-            # run chunk processing
+            # run chunk processing. run_nn会创建对应的info文件, run_nn只有在forward中才会形成ark文件, 使用cfg文件进行nn的配置和计算, 本步形成ark文件
             [data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict] = run_nn(data_name, data_set,
                                                                                           data_end_index, fea_dict,
                                                                                           lab_dict, arch_dict,
@@ -333,7 +328,7 @@ for forward_data in forward_data_lst:
                                                                                           processed_first,
                                                                                           next_config_file)
 
-            # update the first_processed variable
+            # update the first_processed variable. 更新flag，该flag指示加载
             processed_first = False
 
             if not (os.path.exists(info_file)):
@@ -346,6 +341,7 @@ for forward_data in forward_data_lst:
         op_counter += 1
 
 # --------DECODING--------#
+# glob是python自己带的一个文件操作相关模块，用它可以查找符合自己目的的文件.只有forward的才会decoding，也就是只有test的数据才会decoding
 dec_lst = glob.glob(out_folder + '/exp_files/*_to_decode.ark')
 
 forward_data_lst = config['data_use']['forward_with'].split(',')
@@ -353,34 +349,34 @@ forward_outs = config['forward']['forward_out'].split(',')
 forward_dec_outs = list(map(strtobool, config['forward']['require_decoding'].split(',')))
 
 for data in forward_data_lst:
-    for k in range(len(forward_outs)):
-        if forward_dec_outs[k]:
+    for k in range(len(forward_outs)):  # 支持多个forward选项
+        if forward_dec_outs[k]:  # 如果需要进行forward
             print('Decoding %s output %s' % (data, forward_outs[k]))
             info_file = out_folder + '/exp_files/decoding_' + data + '_' + forward_outs[k] + '.info'
 
             # create decode config file
             config_dec_file = out_folder + '/decoding_' + data + '_' + forward_outs[k] + '.conf'
             config_dec = configparser.ConfigParser()
-            config_dec.add_section('decoding')
+            config_dec.add_section('decoding')  # 添加一个decoding的section
 
-            for dec_key in config['decoding'].keys():
+            for dec_key in config['decoding'].keys():  # 将总的cfg文件的decoding块写入decoding过程的cfg文件中
                 config_dec.set('decoding', dec_key, config['decoding'][dec_key])
 
             # add graph_dir, datadir, alidir
             lab_field = config[cfg_item2sec(config, 'data_name', data)]['lab']
 
-            # Production case, we don't have labels
+            # Production case, we don't have labels. 没有标签
             if not is_production:
                 pattern = 'lab_folder=(.*)\nlab_opts=(.*)\nlab_count_file=(.*)\nlab_data_folder=(.*)\nlab_graph=(.*)'
-                alidir = re.findall(pattern, lab_field)[0][0]
+                alidir = re.findall(pattern, lab_field)[0][0]  # 配对的第0个 lab_folder
                 config_dec.set('decoding', 'alidir', os.path.abspath(alidir))
 
-                datadir = re.findall(pattern, lab_field)[0][3]
+                datadir = re.findall(pattern, lab_field)[0][3]  # 配对的第三行  lab_data_folder
                 config_dec.set('decoding', 'data', os.path.abspath(datadir))
 
-                graphdir = re.findall(pattern, lab_field)[0][4]
+                graphdir = re.findall(pattern, lab_field)[0][4]  # 配对的第四行 lab_graph
                 config_dec.set('decoding', 'graphdir', os.path.abspath(graphdir))
-            else:
+            else:  # 有标签
                 pattern = 'lab_data_folder=(.*)\nlab_graph=(.*)'
                 datadir = re.findall(pattern, lab_field)[0][0]
                 config_dec.set('decoding', 'data', os.path.abspath(datadir))
@@ -398,10 +394,11 @@ for data in forward_data_lst:
 
             out_folder = os.path.abspath(out_folder)
             files_dec = out_folder + '/exp_files/forward_' + data + '_ep*_ck*_' + forward_outs[k] + '_to_decode.ark'
+            # .ark文件，该文件将作为第三个参数传入decode_dnn.sh   数据文件   本文件在下一步中可能会被删除
             out_dec_folder = out_folder + '/decode_' + data + '_' + forward_outs[k]
 
             if not (os.path.exists(info_file)):
-                # Run the decoder
+                # Run the decoder. 首先调用kaldi_decoding_scripts文件夹中的decode_dnn.sh
                 cmd_decode = cmd + config['decoding']['decoding_script_folder'] + '/' + config['decoding'][
                     'decoding_script'] + ' ' + os.path.abspath(
                     config_dec_file) + ' ' + out_dec_folder + ' \"' + files_dec + '\"'
@@ -414,7 +411,7 @@ for data in forward_data_lst:
                         os.remove(rem_ark)
 
             # Print WER results and write info file
-            cmd_res = './check_res_dec.sh ' + out_dec_folder
+            cmd_res = './check_res_dec.sh ' + out_dec_folder  # 然后调用本地文件夹下的check_res_dec.sh
             wers = run_shell(cmd_res, log_file).decode('utf-8')
             res_file = open(res_file_path, "a")
             res_file.write('%s\n' % wers)
