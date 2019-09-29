@@ -154,11 +154,9 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
 
     inp_dim = data_set.shape[1]
     for i in range(N_batches):
-
         max_len = 0
 
         if seq_model:
-
             max_len = int(max(arr_snt_len[snt_index:snt_index + batch_size]))
             inp = torch.zeros(max_len, batch_size, inp_dim).contiguous()
 
@@ -174,7 +172,6 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
 
                 beg_snt = data_end_index[snt_index]
                 snt_index = snt_index + 1
-
         else:
             # features and labels for batch i
             if to_do != 'forward':

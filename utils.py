@@ -1700,7 +1700,11 @@ def model_init(inp_out_dict, model, config, arch_dict, use_cuda, multi_gpu, to_d
             arch_freeze_flag = strtobool(config[arch_dict[inp1][0]]['arch_freeze'])
 
             # initialize the neural network
-            net = nn_class(config[arch_dict[inp1][0]], inp_dim)
+            if "DFR" in inp1:
+                batch_size = int(config['batches']['batch_size_train'])
+                net = nn_class(config[arch_dict[inp1][0]], inp_dim, batch_size)  # call constructor
+            else:
+                net = nn_class(config[arch_dict[inp1][0]], inp_dim)  # call constructor
 
             if use_cuda:
                 net.cuda()
@@ -1824,8 +1828,7 @@ def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out
                     if bool(arch_dict[inp1][2]):
                         inp_dnn = inp_dnn.view(max_len, batch_size, -1)
 
-                outs_dict[out_name] = nns[inp1](inp_dnn)
-
+                outs_dict[out_name] = nns[inp1](inp_dnn)  # call forward function
 
             else:
                 if not (bool(arch_dict[inp1][2])) and len(outs_dict[inp2].shape) == 3:

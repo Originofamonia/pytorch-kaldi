@@ -120,7 +120,6 @@ class MLP(nn.Module):
         self.out_dim = current_input
 
     def forward(self, x):
-
         # Applying Layer/Batch Norm
         if bool(self.dnn_use_laynorm_inp):
             x = self.ln0(x)
@@ -146,13 +145,46 @@ class MLP(nn.Module):
         return x
 
 
-class DFR_MLP(MLP):
-    def __init__(self, options, inp_dim):
-        super(DFR_MLP, self).__init__(options, inp_dim)
-        self.res = nn.ModuleList([])
-        self.res.append(torch.new_zeros())  # 本来想获取wx[0](x)的dim，但是这里没有x。所以需要batch size和wx[0]的dim。
+class MLP_DFR(MLP):
+    def __init__(self, options, inp_dim, batch_size):
+        MLP.__init__(self, options, inp_dim)
+        self.res = torch.zeros([batch_size, self.wx[0].out_features])
+        # 先实现个最简单的吧，在wx[0]和wx[1]之间加res
 
+    def forward(self, x):
+        # Applying Layer/Batch Norm
+        if bool(self.dnn_use_laynorm_inp):
+            x = self.ln0(x)
 
+        if bool(self.dnn_use_batchnorm_inp):
+            x = self.bn0(x)
+
+        for i in range(self.N_dnn_lay):
+            # x 是（i - 1）层的输出
+            if i == 1:
+                # 这个loop里面的逻辑还没有想清楚。实在不行了就不用loop了。
+                self.res = 0.1 * self.res + 0.9 * self.multiply(i, x)  # maybe wrong
+                continue
+            self.multiply(i, x)
+
+        return x
+
+    def multiply(self, i, x):
+        # perform wx[i](x)
+        # TODO： 感觉需要把现在forward里面的东西挪到这里，然后在forward里面加上res的计算。
+        if self.dnn_use_laynorm[i] and not (self.dnn_use_batchnorm[i]):
+            x = self.drop[i](self.act[i](self.ln[i](self.wx[i](x))))
+
+        if self.dnn_use_batchnorm[i] and not (self.dnn_use_laynorm[i]):
+            x = self.drop[i](self.act[i](self.bn[i](self.wx[i](x))))
+
+        if self.dnn_use_batchnorm[i] and self.dnn_use_laynorm[i]:
+            x = self.drop[i](self.act[i](self.bn[i](self.ln[i](self.wx[i](x)))))
+
+        if not self.dnn_use_batchnorm[i] and not self.dnn_use_laynorm[i]:
+            x = self.drop[i](self.act[i](self.wx[i](x)))
+
+        return x
 
 class LSTM_cudnn(nn.Module):
 

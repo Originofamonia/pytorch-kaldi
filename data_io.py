@@ -153,6 +153,7 @@ def load_counts(class_counts_file):
     return counts
 
 
+# process label
 def read_lab_fea(cfg_file, fea_only, shared_list, output_folder):
     # Reading chunk-specific cfg file (first argument-mandatory file)
     if not (os.path.exists(cfg_file)):
@@ -266,7 +267,8 @@ def read_lab_fea(cfg_file, fea_only, shared_list, output_folder):
     if not (seq_model) and to_do != 'forward':
         np.random.shuffle(data_set)
 
-    # Split dataset in many part. If the dataset is too big, we can have issues to copy it into the shared memory (due to pickle limits)
+    # Split dataset in many part. If the dataset is too big, we can have issues to copy it into the shared memory
+    # (due to pickle limits)
     # N_split=10
     # data_set=np.array_split(data_set, N_split)
 
