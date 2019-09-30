@@ -194,7 +194,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
             for opt in optimizers.keys():
                 optimizers[opt].zero_grad()
 
-            outs_dict['loss_final'].backward()
+            outs_dict['loss_final'].backward(retain_graph=True)
 
             # Gradient Clipping (th 0.1)
             # for net in nns.keys():

@@ -148,7 +148,7 @@ class MLP(nn.Module):
 class MLP_DFR(MLP):
     def __init__(self, options, inp_dim, batch_size):
         MLP.__init__(self, options, inp_dim)
-        self.res = torch.zeros([batch_size, self.wx[0].out_features])
+        self.res = torch.zeros([batch_size, self.wx[0].out_features], device='cuda:0')
         # 先实现个最简单的吧，在wx[0]和wx[1]之间加res
 
     def forward(self, x):
@@ -162,10 +162,12 @@ class MLP_DFR(MLP):
         for i in range(self.N_dnn_lay):
             # x 是（i - 1）层的输出
             if i == 1:
-                # 这个loop里面的逻辑还没有想清楚。实在不行了就不用loop了。
-                self.res = 0.1 * self.res + 0.9 * self.multiply(i, x)  # maybe wrong
+                x = self.multiply(i, self.res)
                 continue
-            self.multiply(i, x)
+
+            x = self.multiply(i, x)
+            if i == 0:
+                self.res = 0.1 * self.res + 0.9 * x
 
         return x
 
@@ -185,6 +187,7 @@ class MLP_DFR(MLP):
             x = self.drop[i](self.act[i](self.wx[i](x)))
 
         return x
+
 
 class LSTM_cudnn(nn.Module):
 
