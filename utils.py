@@ -1701,8 +1701,8 @@ def model_init(inp_out_dict, model, config, arch_dict, use_cuda, multi_gpu, to_d
 
             # initialize the neural network
             if "DFR" in inp1:
-                batch_size = int(config['batches']['batch_size_train'])
-                net = nn_class(config[arch_dict[inp1][0]], inp_dim, batch_size)  # call constructor
+                # batch_size = int(config['batches']['batch_size_train'])
+                net = nn_class(config[arch_dict[inp1][0]], inp_dim, config)  # call constructor
             else:
                 net = nn_class(config[arch_dict[inp1][0]], inp_dim)  # call constructor
 
@@ -1718,7 +1718,7 @@ def model_init(inp_out_dict, model, config, arch_dict, use_cuda, multi_gpu, to_d
             else:
                 net.eval()
 
-            # addigng nn into the nns dict
+            # adding nn into the nns dict
             nns[arch_dict[inp1][1]] = net
 
             out_dim = net.out_dim
@@ -1814,9 +1814,7 @@ def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out
         [out_name, operation, inp1, inp2] = list(re.findall(pattern, line)[0])
 
         if operation == 'compute':
-
             if len(inp_out_dict[inp2]) > 1:  # if it is an input feature
-
                 # Selection of the right feature in the inp tensor
                 if len(inp.shape) == 3:
                     inp_dnn = inp[:, :, inp_out_dict[inp2][-3]:inp_out_dict[inp2][-2]]

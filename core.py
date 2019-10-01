@@ -72,7 +72,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
         # Reading all the features and labels for this chunk
         shared_list = []
 
-        p = threading.Thread(target=read_lab_fea, args=(cfg_file, is_production, shared_list, output_folder,))
+        p = threading.Thread(target=read_lab_fea, args=(cfg_file, is_production, shared_list, output_folder))
         p.start()
         p.join()
 
@@ -176,7 +176,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
             # features and labels for batch i
             if to_do != 'forward':
                 inp = data_set[beg_batch:end_batch, :].contiguous()
-            else:
+            else:  # here is why the inference dim is different from training.
                 snt_len = data_end_index[snt_index] - beg_snt
                 inp = data_set[beg_snt:beg_snt + snt_len, :].contiguous()
                 beg_snt = data_end_index[snt_index]
@@ -204,7 +204,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
                 if not (strtobool(config[arch_dict[opt][0]]['arch_freeze'])):
                     optimizers[opt].step()
         else:
-            with torch.no_grad():  # Forward input without autograd graph (save memory)
+            with torch.no_grad():  # Forward input without autograd graph (save memory) 这里应该是inference
                 outs_dict = forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out_dict, max_len,
                                           batch_size, to_do, forward_outs)
 
