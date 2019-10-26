@@ -1079,7 +1079,7 @@ class RNN(nn.Module):
                 h_init = torch.zeros(x.shape[1], self.rnn_lay[i])
 
             # Drop mask initilization (same mask for all time steps)
-            if self.test_flag == False:
+            if not self.test_flag:
                 drop_mask = torch.bernoulli(torch.Tensor(h_init.shape[0], h_init.shape[1]).fill_(1 - self.rnn_drop[i]))
             else:
                 drop_mask = torch.FloatTensor([1 - self.rnn_drop[i]])
