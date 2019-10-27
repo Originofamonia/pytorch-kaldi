@@ -1796,6 +1796,7 @@ def optimizer_init(nns, config, arch_dict):
     return optimizers
 
 
+# inference
 def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out_dict, max_len, batch_size, to_do,
                   forward_outs):
     # Forward Step

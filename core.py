@@ -204,7 +204,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
                 if not (strtobool(config[arch_dict[opt][0]]['arch_freeze'])):
                     optimizers[opt].step()
         else:
-            with torch.no_grad():  # Forward input without autograd graph (save memory) 这里应该是inference
+            with torch.no_grad():  # Forward input without autograd graph (save memory) inference
                 outs_dict = forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out_dict, max_len,
                                           batch_size, to_do, forward_outs)
 

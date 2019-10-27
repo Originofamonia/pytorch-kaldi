@@ -1063,7 +1063,7 @@ class RNN(nn.Module):
 
         # Applying Layer/Batch Norm
         if bool(self.rnn_use_laynorm_inp):
-            x = self.ln0((x))
+            x = self.ln0(x)
 
         if bool(self.rnn_use_batchnorm_inp):
             x_bn = self.bn0(x.view(x.shape[0] * x.shape[1], x.shape[2]))
@@ -1124,6 +1124,69 @@ class RNN(nn.Module):
             x = h
 
         return x
+
+
+class RC(RNN):
+    def __init__(self, options, inp_dim):
+        RNN.__init__(self, options, inp_dim)
+        self.rc_type = options['rc_type']
+        self.wh = nn.ModuleList([])
+        self.uh = nn.ModuleList([])
+
+        self.ln = nn.ModuleList([])  # Layer Norm
+        self.bn_wh = nn.ModuleList([])  # Batch Norm
+
+        self.act = nn.ModuleList([])  # Activations
+
+        # Input layer normalization
+        if self.rnn_use_laynorm_inp:
+            self.ln0 = LayerNorm(self.input_dim)
+
+        # Input batch normalization
+        if self.rnn_use_batchnorm_inp:
+            self.bn0 = nn.BatchNorm1d(self.input_dim, momentum=0.05)
+
+        self.N_rnn_lay = len(self.rnn_lay)
+
+        current_input = self.input_dim
+
+        for i in range(self.N_rnn_lay):
+
+            # Activations
+            self.act.append(act_fun(self.rnn_act[i]))
+
+            add_bias = True
+
+            if self.rnn_use_laynorm[i] or self.rnn_use_batchnorm[i]:
+                add_bias = False
+
+            # Feed-forward connections
+            self.wh.append(nn.Linear(current_input, self.rnn_lay[i], bias=add_bias))
+
+            # Recurrent connections
+            if self.rc_type == 'DFR':
+                uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
+                uhi.weight.data = 0.1 * torch.eye(self.rnn_lay[i])
+                uhi.weight.requires_grad = False  # this is the correct way to freeze weights.
+            elif self.rc_type == 'ESN':
+                uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
+                uhi.weight.requires_grad = False
+            else:
+                uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
+            self.uh.append(uhi)
+
+            if self.rnn_orthinit:
+                nn.init.orthogonal_(self.uh[i].weight)
+
+            # batch norm initialization
+            self.bn_wh.append(nn.BatchNorm1d(self.rnn_lay[i], momentum=0.05))
+
+            self.ln.append(LayerNorm(self.rnn_lay[i]))
+
+            if self.bidir:
+                current_input = 2 * self.rnn_lay[i]
+            else:
+                current_input = self.rnn_lay[i]
 
 
 class CNN(nn.Module):
