@@ -22,10 +22,7 @@ import math
 # Reading global cfg file (first argument-mandatory file)
 # cfg_file = sys.argv[1]
 
-
-class Run:
-    pass
-
+# tried to write a class of wrapper. Too hard.
 
 cfg_file = 'cfg/TIMIT_baselines/TIMIT_DFR_RC_mfcc.cfg'
 if not (os.path.exists(cfg_file)):
@@ -298,9 +295,6 @@ for pt_arch in pt_files.keys():
         copyfile(model_files[pt_arch], out_folder + '/exp_files/final_' + pt_arch + '.pkl')
 
 # --------FORWARD--------#
-has_noise = False  # noise 应该加在forward这里，而不是decode
-if config['forward']['add_noise'].split(','):
-    has_noise = strtobool(config['forward']['add_noise'])
 for forward_data in forward_data_lst:  # forward_data_lst就是配置文件中的 forward_with
 
     # Compute the number of chunks

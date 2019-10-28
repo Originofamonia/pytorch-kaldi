@@ -1798,7 +1798,7 @@ def optimizer_init(nns, config, arch_dict):
 
 # inference
 def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out_dict, max_len, batch_size, to_do,
-                  forward_outs):
+                  forward_outs, has_noise=False):
     # Forward Step
     outs_dict = {}
     pattern = '(.*)=(.*)\((.*),(.*)\)'  # this is correct, don't change it
@@ -1826,7 +1826,8 @@ def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out
                     inp_dnn = inp[:, inp_out_dict[inp2][-3]:inp_out_dict[inp2][-2]]
                     if bool(arch_dict[inp1][2]):
                         inp_dnn = inp_dnn.view(max_len, batch_size, -1)
-
+                if has_noise:  # inference add noise
+                    inp_dnn = gaussian(inp_dnn, 0.01)
                 outs_dict[out_name] = nns[inp1](inp_dnn)  # call forward function
 
             else:
@@ -1918,6 +1919,10 @@ def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out
                 break
 
     return outs_dict
+
+
+def gaussian(ins, stddev=0.01):
+    return ins + torch.autograd.Variable(torch.randn(ins.shape).cuda() * stddev)
 
 
 def dump_epoch_results(res_file_path, ep, tr_data_lst, tr_loss_tot, tr_error_tot, tot_time, valid_data_lst,

@@ -52,6 +52,9 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
     forward_normalize_post = list(map(strtobool, config['forward']['normalize_posteriors'].split(',')))
     forward_count_files = config['forward']['normalize_with_counts_from'].split(',')
     require_decodings = list(map(strtobool, config['forward']['require_decoding'].split(',')))
+    has_noise = False  # noise 应该加在forward这里，而不是decode
+    if config['forward']['add_noise'] is not None:
+        has_noise = strtobool(config['forward']['add_noise'])
 
     use_cuda = strtobool(config['exp']['use_cuda'])
     save_gpumem = strtobool(config['exp']['save_gpumem'])
@@ -205,8 +208,8 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
                     optimizers[opt].step()
         else:
             with torch.no_grad():  # Forward input without autograd graph (save memory) inference
-                outs_dict = forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out_dict, max_len,
-                                          batch_size, to_do, forward_outs)
+                outs_dict = forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out_dict,
+                                          max_len, batch_size, to_do, forward_outs, has_noise)
 
         if to_do == 'forward':
             for out_id in range(len(forward_outs)):
