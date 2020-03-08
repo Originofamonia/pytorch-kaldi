@@ -1164,7 +1164,7 @@ class RC(RNN):
             if self.rc_type == 'DFR':
                 # Feed-forward connections
                 whi = nn.Linear(current_input, self.rnn_lay[i], bias=add_bias)
-                whi.weight *= 0.9
+                whi.weight *= 0.9  # this 0.9 is to match the uhi's 0.1
                 self.wh.append(whi)
 
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
@@ -1176,8 +1176,8 @@ class RC(RNN):
 
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
                 eigvals, _ = torch.eig(uhi.weight, eigenvectors=False)
-                uhi.weight.data /= torch.max(eigvals[0])
-                uhi.weight.data *= 0.5
+                uhi.weight.data /= torch.max(eigvals[0])  # divided by the largest eigenvalue
+                uhi.weight.data *= 0.5  # times a scale factor
                 uhi.weight.requires_grad = False
             else:
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
