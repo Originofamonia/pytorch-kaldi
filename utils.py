@@ -1827,7 +1827,7 @@ def forward_model(fea_dict, lab_dict, arch_dict, model, nns, costs, inp, inp_out
                     if bool(arch_dict[inp1][2]):
                         inp_dnn = inp_dnn.view(max_len, batch_size, -1)
                 if has_noise:  # inference add noise
-                    inp_dnn = gaussian(inp_dnn, 0.01)
+                    inp_dnn = gaussian(inp_dnn, 1)
                 outs_dict[out_name] = nns[inp1](inp_dnn)  # call forward function
 
             else:

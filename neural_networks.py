@@ -1160,16 +1160,24 @@ class RC(RNN):
             if self.rnn_use_laynorm[i] or self.rnn_use_batchnorm[i]:
                 add_bias = False
 
-            # Feed-forward connections
-            self.wh.append(nn.Linear(current_input, self.rnn_lay[i], bias=add_bias))
-
             # Recurrent connections
             if self.rc_type == 'DFR':
+                # Feed-forward connections
+                whi = nn.Linear(current_input, self.rnn_lay[i], bias=add_bias)
+                whi.weight *= 0.9
+                self.wh.append(whi)
+
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
                 uhi.weight.data = 0.1 * torch.eye(self.rnn_lay[i])
                 uhi.weight.requires_grad = False  # this is the correct way to freeze weights.
             elif self.rc_type == 'ESN':
+                # Feed-forward connections
+                self.wh.append(nn.Linear(current_input, self.rnn_lay[i], bias=add_bias))
+
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
+                eigvals, _ = torch.eig(uhi.weight, eigenvectors=False)
+                uhi.weight.data /= torch.max(eigvals[0])
+                uhi.weight.data *= 0.5
                 uhi.weight.requires_grad = False
             else:
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)

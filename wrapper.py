@@ -24,7 +24,7 @@ import math
 
 # tried to write a class of wrapper. Too hard.
 
-cfg_file = 'cfg/TIMIT_baselines/TIMIT_DFR_RC_mfcc.cfg'
+cfg_file = 'cfg/TIMIT_baselines/TIMIT_RNN_mfcc.cfg'
 if not (os.path.exists(cfg_file)):
     sys.stderr.write('ERROR: The config file %s does not exist!\n' % cfg_file)
     sys.exit(0)

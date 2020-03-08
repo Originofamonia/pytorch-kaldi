@@ -53,7 +53,7 @@ def run_nn(data_name, data_set, data_end_index, fea_dict, lab_dict, arch_dict, c
     forward_count_files = config['forward']['normalize_with_counts_from'].split(',')
     require_decodings = list(map(strtobool, config['forward']['require_decoding'].split(',')))
     has_noise = False  # noise 应该加在forward这里，而不是decode
-    if config['forward']['add_noise'] is not None:
+    if config['forward']['add_noise'] is not None:  #
         has_noise = strtobool(config['forward']['add_noise'])
 
     use_cuda = strtobool(config['exp']['use_cuda'])

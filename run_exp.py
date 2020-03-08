@@ -24,7 +24,7 @@ import math
 
 # Reading global cfg file (first argument-mandatory file)
 # cfg_file = sys.argv[1]
-cfg_file = 'cfg/TIMIT_baselines/TIMIT_RNN_mfcc.cfg'
+cfg_file = 'cfg/TIMIT_baselines/TIMIT_ESN_RC_mfcc.cfg'
 if not (os.path.exists(cfg_file)):
     sys.stderr.write('ERROR: The config file %s does not exist!\n' % cfg_file)
     sys.exit(0)
