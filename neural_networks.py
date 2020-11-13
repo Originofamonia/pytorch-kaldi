@@ -58,7 +58,7 @@ def act_fun(act_type):
 
 
 class MLP(nn.Module):
-    def __init__(self, options, inp_dim):  # 读取cfg文件里面该层神经网络的信息  并初始化该层神经网络
+    def __init__(self, options, inp_dim):
         super(MLP, self).__init__()
 
         self.input_dim = inp_dim
@@ -145,54 +145,52 @@ class MLP(nn.Module):
         return x
 
 
-class MLP_DFR(MLP):
-    def __init__(self, options, inp_dim, config):
-        MLP.__init__(self, options, inp_dim)
-        self.config = config
-        batch_size = int(self.config['batches']['batch_size_train'])
-        self.res = torch.zeros([batch_size, self.wx[0].out_features], device='cuda:0')
-        # 先实现个最简单的吧，在wx[0]和wx[1]之间加res
-
-    def forward(self, x):
-        # Applying Layer/Batch Norm
-        if bool(self.dnn_use_laynorm_inp):
-            x = self.ln0(x)
-
-        if bool(self.dnn_use_batchnorm_inp):
-            x = self.bn0(x)
-
-        to_do = self.config['exp']['to_do']
-        if to_do == "train":
-            for i in range(self.N_dnn_lay):
-                # x 是（i - 1）层的输出
-                if i == 1:
-                    x = self.multiply(i, self.res)
-                    continue
-
-                x = self.multiply(i, x)
-                if i == 0:
-                    self.res = 0.1 * self.res + 0.9 * x
-        elif to_do == "valid" or to_do == "forward":
-            for i in range(self.N_dnn_lay):
-                x = self.multiply(i, x)
-        return x
-
-    def multiply(self, i, x):
-        # perform wx[i](x)
-        # 感觉需要把现在forward里面的东西挪到这里，然后在forward里面加上res的计算。
-        if self.dnn_use_laynorm[i] and not (self.dnn_use_batchnorm[i]):
-            x = self.drop[i](self.act[i](self.ln[i](self.wx[i](x))))
-
-        if self.dnn_use_batchnorm[i] and not (self.dnn_use_laynorm[i]):
-            x = self.drop[i](self.act[i](self.bn[i](self.wx[i](x))))
-
-        if self.dnn_use_batchnorm[i] and self.dnn_use_laynorm[i]:
-            x = self.drop[i](self.act[i](self.bn[i](self.ln[i](self.wx[i](x)))))
-
-        if not self.dnn_use_batchnorm[i] and not self.dnn_use_laynorm[i]:
-            x = self.drop[i](self.act[i](self.wx[i](x)))
-
-        return x
+# class MLP_DFR(MLP):  # incorrect
+#     def __init__(self, options, inp_dim, config):
+#         MLP.__init__(self, options, inp_dim)
+#         self.config = config
+#         batch_size = int(self.config['batches']['batch_size_train'])
+#         self.res = torch.zeros([batch_size, self.wx[0].out_features], device='cuda:0')
+#
+#     def forward(self, x):
+#         # Applying Layer/Batch Norm
+#         if bool(self.dnn_use_laynorm_inp):
+#             x = self.ln0(x)
+#
+#         if bool(self.dnn_use_batchnorm_inp):
+#             x = self.bn0(x)
+#
+#         to_do = self.config['exp']['to_do']
+#         if to_do == "train":
+#             for i in range(self.N_dnn_lay):
+#                 # x 是（i - 1）层的输出
+#                 if i == 1:
+#                     x = self.multiply(i, self.res)
+#                     continue
+#
+#                 x = self.multiply(i, x)
+#                 if i == 0:
+#                     self.res = 0.1 * self.res + 0.9 * x
+#         elif to_do == "valid" or to_do == "forward":
+#             for i in range(self.N_dnn_lay):
+#                 x = self.multiply(i, x)
+#         return x
+#
+#     def multiply(self, i, x):
+#         # perform wx[i](x)
+#         if self.dnn_use_laynorm[i] and not (self.dnn_use_batchnorm[i]):
+#             x = self.drop[i](self.act[i](self.ln[i](self.wx[i](x))))
+#
+#         if self.dnn_use_batchnorm[i] and not (self.dnn_use_laynorm[i]):
+#             x = self.drop[i](self.act[i](self.bn[i](self.wx[i](x))))
+#
+#         if self.dnn_use_batchnorm[i] and self.dnn_use_laynorm[i]:
+#             x = self.drop[i](self.act[i](self.bn[i](self.ln[i](self.wx[i](x)))))
+#
+#         if not self.dnn_use_batchnorm[i] and not self.dnn_use_laynorm[i]:
+#             x = self.drop[i](self.act[i](self.wx[i](x)))
+#
+#         return x
 
 
 class LSTM_cudnn(nn.Module):
@@ -306,14 +304,14 @@ class LSTM(nn.Module):
 
         # Reading parameters
         self.input_dim = inp_dim
-        self.lstm_lay = list(map(int, options['lstm_lay'].split(',')))  # 每个lay的神经元个数
+        self.lstm_lay = list(map(int, options['lstm_lay'].split(',')))
         self.lstm_drop = list(map(float, options['lstm_drop'].split(',')))  # dropout
         self.lstm_use_batchnorm = list(map(strtobool, options['lstm_use_batchnorm'].split(',')))
         self.lstm_use_laynorm = list(map(strtobool, options['lstm_use_laynorm'].split(',')))
         self.lstm_use_laynorm_inp = strtobool(options['lstm_use_laynorm_inp'])
         self.lstm_use_batchnorm_inp = strtobool(options['lstm_use_batchnorm_inp'])
         self.lstm_act = options['lstm_act'].split(',')  # activation function
-        self.lstm_orthinit = strtobool(options['lstm_orthinit'])  # 正交初始化
+        self.lstm_orthinit = strtobool(options['lstm_orthinit'])
 
         self.bidir = strtobool(options['lstm_bidir'])  # bi-directional
         self.use_cuda = strtobool(options['use_cuda'])
@@ -325,8 +323,8 @@ class LSTM(nn.Module):
             self.test_flag = True
 
         # List initialization
-        self.wfx = nn.ModuleList([])  # Forget weight(输入值)
-        self.ufh = nn.ModuleList([])  # Forget weight(上一时刻状态值)
+        self.wfx = nn.ModuleList([])  # Forget weight
+        self.ufh = nn.ModuleList([])  # Forget weight
 
         self.wix = nn.ModuleList([])  # Input
         self.uih = nn.ModuleList([])  # Input
@@ -347,26 +345,24 @@ class LSTM(nn.Module):
 
         # Input layer normalization
         if self.lstm_use_laynorm_inp:
-            self.ln0 = LayerNorm(self.input_dim)  # 输入层normalization
+            self.ln0 = LayerNorm(self.input_dim)
 
         # Input batch normalization
         if self.lstm_use_batchnorm_inp:
             self.bn0 = nn.BatchNorm1d(self.input_dim, momentum=0.05)
 
-        self.N_lstm_lay = len(self.lstm_lay)  # 层数
+        self.N_lstm_lay = len(self.lstm_lay)
 
-        current_input = self.input_dim  # 当前的输入维度
+        current_input = self.input_dim
 
         # Initialization of hidden layers
-
         for i in range(self.N_lstm_lay):
 
             # Activations
-            self.act.append(act_fun(self.lstm_act[i]))  # 添加该层的激活函数
+            self.act.append(act_fun(self.lstm_act[i]))
 
-            add_bias = True  # 是否添加偏置
+            add_bias = True
 
-            # 如果使用了laynorm 或者 batchnorm，则偏置无效。 因为使用了norm以后，数据的分布已经改变为正态分布，故偏置已经无意义
             if self.lstm_use_laynorm[i] or self.lstm_use_batchnorm[i]:
                 add_bias = False
 
@@ -376,14 +372,14 @@ class LSTM(nn.Module):
             self.wox.append(nn.Linear(current_input, self.lstm_lay[i], bias=add_bias))
             self.wcx.append(nn.Linear(current_input, self.lstm_lay[i], bias=add_bias))
 
-            # Recurrent connections  循环连接
+            # Recurrent connections
             self.ufh.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
             self.uih.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
             self.uoh.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
             self.uch.append(nn.Linear(self.lstm_lay[i], self.lstm_lay[i], bias=False))
 
             if self.lstm_orthinit:
-                nn.init.orthogonal_(self.ufh[i].weight)  # 将权重进行正交初始化
+                nn.init.orthogonal_(self.ufh[i].weight)
                 nn.init.orthogonal_(self.uih[i].weight)
                 nn.init.orthogonal_(self.uoh[i].weight)
                 nn.init.orthogonal_(self.uch[i].weight)
@@ -396,12 +392,12 @@ class LSTM(nn.Module):
 
             self.ln.append(LayerNorm(self.lstm_lay[i]))
 
-            if self.bidir:  # 是否是双向的LSTM
+            if self.bidir:
                 current_input = 2 * self.lstm_lay[i]
             else:
                 current_input = self.lstm_lay[i]
 
-        self.out_dim = self.lstm_lay[i] + self.bidir * self.lstm_lay[i]  # 输出的维数 self.bidir是bool值
+        self.out_dim = self.lstm_lay[i] + self.bidir * self.lstm_lay[i]
 
     def forward(self, x):
 
@@ -410,23 +406,20 @@ class LSTM(nn.Module):
             x = self.ln0((x))
 
         if bool(self.lstm_use_batchnorm_inp):
-            # 首先展开x成为一个二维数组，并进行batch normalization
             x_bn = self.bn0(x.view(x.shape[0] * x.shape[1], x.shape[2]))
-            x = x_bn.view(x.shape[0], x.shape[1], x.shape[2])  # 然后将x变成原先的shape
+            x = x_bn.view(x.shape[0], x.shape[1], x.shape[2])
 
         for i in range(self.N_lstm_lay):
 
             # Initial state and concatenation
             if self.bidir:
                 h_init = torch.zeros(2 * x.shape[1], self.lstm_lay[i])
-                x = torch.cat([x, flip(x, 0)], 1)  # cat为拼接函数   1表示横向拼接    0表示纵向拼接
+                x = torch.cat([x, flip(x, 0)], 1)
             else:
                 h_init = torch.zeros(x.shape[1], self.lstm_lay[i])
 
             # Drop mask initialization (same mask for all time steps)
             if not self.test_flag:
-                # bernoulli 伯努利分布（两点分布）drop_mask首先是一个全部都为0.8，shape=(shape[0],shape[1])的矩阵
-                # 然后经过伯努利分布得到各点值为0或1的矩阵
                 drop_mask = torch.bernoulli(torch.Tensor(h_init.shape[0], h_init.shape[1]).fill_(1 - self.lstm_drop[i]))
             else:
                 drop_mask = torch.FloatTensor([1 - self.lstm_drop[i]])
@@ -463,7 +456,7 @@ class LSTM(nn.Module):
             for k in range(x.shape[0]):
 
                 # LSTM equations
-                ft = torch.sigmoid(wfx_out[k] + self.ufh[i](ht))  # wx_out之前已经计算过了 uh还没有计算过
+                ft = torch.sigmoid(wfx_out[k] + self.ufh[i](ht))
                 it = torch.sigmoid(wix_out[k] + self.uih[i](ht))
                 ot = torch.sigmoid(wox_out[k] + self.uoh[i](ht))
                 ct = it * self.act[i](wcx_out[k] + self.uch[i](ht)) * drop_mask + ft * ct
@@ -474,7 +467,7 @@ class LSTM(nn.Module):
 
                 hiddens.append(ht)
 
-            # Stacking hidden states 合并隐藏状态，将不同时刻得到的隐藏状态合并成同一个tensor，沿时间轴
+            # Stacking hidden states
             h = torch.stack(hiddens)
 
             # Bidirectional concatenations
@@ -602,8 +595,8 @@ class GRU(nn.Module):
             else:
                 h_init = torch.zeros(x.shape[1], self.gru_lay[i])
 
-            # Drop mask initilization (same mask for all time steps)
-            if self.test_flag == False:
+            # Drop mask initialization (same mask for all time steps)
+            if not self.test_flag:
                 drop_mask = torch.bernoulli(torch.Tensor(h_init.shape[0], h_init.shape[1]).fill_(1 - self.gru_drop[i]))
             else:
                 drop_mask = torch.FloatTensor([1 - self.gru_drop[i]])
@@ -766,8 +759,8 @@ class liGRU(nn.Module):
             else:
                 h_init = torch.zeros(x.shape[1], self.ligru_lay[i])
 
-            # Drop mask initilization (same mask for all time steps)
-            if self.test_flag == False:
+            # Drop mask initialization (same mask for all time steps)
+            if not self.test_flag:
                 drop_mask = torch.bernoulli(
                     torch.Tensor(h_init.shape[0], h_init.shape[1]).fill_(1 - self.ligru_drop[i]))
             else:
@@ -926,8 +919,8 @@ class minimalGRU(nn.Module):
             else:
                 h_init = torch.zeros(x.shape[1], self.minimalgru_lay[i])
 
-            # Drop mask initilization (same mask for all time steps)
-            if self.test_flag == False:
+            # Drop mask initialization (same mask for all time steps)
+            if not self.test_flag:
                 drop_mask = torch.bernoulli(
                     torch.Tensor(h_init.shape[0], h_init.shape[1]).fill_(1 - self.minimalgru_drop[i]))
             else:
@@ -1078,7 +1071,7 @@ class RNN(nn.Module):
             else:
                 h_init = torch.zeros(x.shape[1], self.rnn_lay[i])
 
-            # Drop mask initilization (same mask for all time steps)
+            # Drop mask initialization (same mask for all time steps)
             if not self.test_flag:
                 drop_mask = torch.bernoulli(torch.Tensor(h_init.shape[0], h_init.shape[1]).fill_(1 - self.rnn_drop[i]))
             else:
@@ -1532,7 +1525,7 @@ class SincConv(nn.Module):
                         bias=None, groups=1)
 
 
-class SincConv_fast(nn.Module):
+class SincConvFast(nn.Module):
     """Sinc-based convolution
     Parameters
     ----------
@@ -1566,7 +1559,7 @@ class SincConv_fast(nn.Module):
                  stride=1, padding=0, dilation=1, bias=False, groups=1,
                  sample_rate=16000, min_low_hz=50, min_band_hz=50):
 
-        super(SincConv_fast, self).__init__()
+        super(SincConvFast, self).__init__()
 
         if in_channels != 1:
             # msg = (f'SincConv only support one input channel '
@@ -1645,7 +1638,9 @@ class SincConv_fast(nn.Module):
         f_times_t_high = torch.matmul(high, self.n_)
 
         band_pass_left = ((torch.sin(f_times_t_high) - torch.sin(f_times_t_low)) / (
-                    self.n_ / 2)) * self.window_  # Equivalent of Eq.4 of the reference paper (SPEAKER RECOGNITION FROM RAW WAVEFORM WITH SINCNET). I just have expanded the sinc and simplified the terms. This way I avoid several useless computations.
+                self.n_ / 2)) * self.window_
+        # Equivalent of Eq.4 of the reference paper (SPEAKER RECOGNITION FROM RAW WAVEFORM WITH SINCNET). I just have
+        # expanded the sinc and simplified the terms. This way I avoid several useless computations.
         band_pass_center = 2 * band.view(-1, 1)
         band_pass_right = torch.flip(band_pass_left, dims=[1])
 
@@ -1716,4 +1711,3 @@ class SRU(nn.Module):
             h0 = h0.cuda()
         output, hn = self.sru(x, c0=h0)
         return output
-
