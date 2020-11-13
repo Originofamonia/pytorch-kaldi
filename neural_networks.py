@@ -1168,15 +1168,21 @@ class RC(RNN):
                 self.wh.append(whi)
 
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
-                uhi.weight.data = 0.1 * torch.eye(self.rnn_lay[i])
+                whh = uhi.weight.data
+                whh2 = torch.matmul(whh.T, whh)
+                eigvals, _ = torch.eig(whh2, eigenvectors=False)
+                uhi.weight.data = 0.5 * torch.eye(self.rnn_lay[i]) * eigvals[:, 0]
                 uhi.weight.requires_grad = False  # this is the correct way to freeze weights.
             elif self.rc_type == 'ESN':
                 # Feed-forward connections
                 self.wh.append(nn.Linear(current_input, self.rnn_lay[i], bias=add_bias))
 
                 uhi = nn.Linear(self.rnn_lay[i], self.rnn_lay[i], bias=False)
-                eigvals, _ = torch.eig(uhi.weight, eigenvectors=False)
-                uhi.weight.data /= torch.max(eigvals[0])  # divided by the largest eigenvalue
+                whh = uhi.weight.data
+                whh2 = torch.matmul(whh.T, whh)
+                eigvals, _ = torch.eig(whh2, eigenvectors=False)
+                uhi.weight.data = whh2
+                uhi.weight.data /= torch.max(eigvals[:, 0])  # divided by the largest eigenvalue
                 uhi.weight.data *= 0.5  # times a scale factor
                 uhi.weight.requires_grad = False
             else:
